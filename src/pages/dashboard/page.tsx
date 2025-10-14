@@ -175,7 +175,6 @@ export default function Dashboard() {
               ) : (
                 <>
                   <span>더 많은 질문 보기</span>
-                  <div className="w-4 h-4 border border-current rounded"></div>
                 </>
               )}
             </button>
