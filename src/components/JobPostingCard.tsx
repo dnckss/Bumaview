@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin, Clock, Briefcase } from 'lucide-react';
+import { MapPin, Briefcase } from 'lucide-react';
 import type { JobPosting } from '../api/jobPostings';
 
 interface JobPostingCardProps {

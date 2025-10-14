@@ -5,7 +5,7 @@ import Header from '../../components/Header';
 import type { JobPosting } from '../../api/jobPostings';
 import { fetchCompanies } from '../../api/companies';
 import type { Company } from '../../api/companies';
-import axios from 'axios';
+
 
 const JobPostingDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();

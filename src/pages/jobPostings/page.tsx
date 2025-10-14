@@ -16,10 +16,10 @@ const JobPostingsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useState<JobPostingsParams>({});
   const [searchInput, setSearchInput] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
+  
   const [activeFilterTab, setActiveFilterTab] = useState<string | null>(null);
   const [uniqueEmploymentTypes, setUniqueEmploymentTypes] = useState<string[]>([]);
-  const [uniqueWorkLocations, setUniqueWorkLocations] = useState<string[]>([]);
+  const [_uniqueWorkLocations, setUniqueWorkLocations] = useState<string[]>([]);
 
   useEffect(() => {
     const loadData = async () => {
