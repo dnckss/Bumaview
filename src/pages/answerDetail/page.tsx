@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { useUser } from '@clerk/clerk-react';
 import { ArrowLeft, Heart, MessageCircle, Reply, ChevronDown } from 'lucide-react';
 import Header from '../../components/Header';
 
@@ -27,12 +26,12 @@ const AnswerDetailPage: React.FC = () => {
   const { answerId } = useParams<{ answerId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useUser();
+  
   
   // 전달받은 답변 데이터 사용
   const answerData = location.state?.answerData;
-  const [isLiked, setIsLiked] = useState(answerData?.isLiked || false);
-  const [likes, setLikes] = useState(answerData?.likes || 0);
+  const [isLiked, _setIsLiked] = useState(answerData?.isLiked || false);
+  const [likes, _setLikes] = useState(answerData?.likes || 0);
 
   // 전달받은 데이터가 없으면 기본값 사용
   const answer: Answer = answerData || {
@@ -77,15 +76,6 @@ const AnswerDetailPage: React.FC = () => {
     navigate(-1); // 이전 페이지로 돌아가기
   };
 
-  const handleLike = () => {
-    setIsLiked(!isLiked);
-    setLikes((prev: number) => isLiked ? prev - 1 : prev + 1);
-  };
-
-  const handleReply = (replyId: number) => {
-    console.log('Reply to:', replyId);
-    // 답글 작성 로직
-  };
 
   return (
     <div className="min-h-screen bg-[#0b0b0c] text-white">

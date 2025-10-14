@@ -120,7 +120,7 @@ const CompaniesPage: React.FC = () => {
 
                     {/* 테이블 바디 */}
                     <div className="divide-y divide-[#374151]">
-                        {filteredCompanies.map((company, index) => (
+                        {filteredCompanies.map((company, _index) => (
                             <div
                                 key={company.company_id}
                                 className="px-6 py-4 hover:bg-[#111827] transition-colors duration-150 group"

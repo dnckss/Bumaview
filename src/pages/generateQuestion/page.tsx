@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth, useUser } from '@clerk/clerk-react';
+import { useAuth } from '@clerk/clerk-react';
 import { Check } from 'lucide-react';
 import { positions } from '../../constants/positions';
 import { fetchCompanies, type Company } from '../../api/companies';
@@ -17,8 +16,6 @@ interface FormData {
 }
 
 const GenerateQuestionPage: React.FC = () => {
-  const navigate = useNavigate();
-  const { user } = useUser();
   
   const [formData, setFormData] = useState<FormData>({
     question: '',
@@ -30,7 +27,7 @@ const GenerateQuestionPage: React.FC = () => {
 
   const { getToken } = useAuth()
   const [showPositionDropdown, setShowPositionDropdown] = useState(false);
-  const [showRoundDropdown, setShowRoundDropdown] = useState(false);
+  const [_showRoundDropdown, setShowRoundDropdown] = useState(false);
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
   const [showCompanyDropdown, setShowCompanyDropdown] = useState(false);
   const [showMainContent, setShowMainContent] = useState(false);
@@ -40,8 +37,6 @@ const GenerateQuestionPage: React.FC = () => {
   const [filteredCompanies, setFilteredCompanies] = useState<Company[]>([]);
   const [isLoadingPositions, setIsLoadingPositions] = useState(false);
 
-
-  const interviewRounds = ['1차 면접', '2차 면접', '3차 면접', '최종 면접'];
   const questionTypes = ['기술 면접', '인성 면접'];
 
   const handleInputChange = (field: keyof FormData, value: string | number) => {

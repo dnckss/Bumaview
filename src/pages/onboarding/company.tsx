@@ -40,7 +40,7 @@ export default function Company() {
 
       const token = await getToken()
 
-      const response = await axios.patch(`${URL}/users/positions`, {
+      await axios.patch(`${URL}/users/positions`, {
         position_ids: positionIds,
         company_ids: [companyId]
       }, {

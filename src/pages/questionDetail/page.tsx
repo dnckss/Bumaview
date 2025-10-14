@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useUser } from '@clerk/clerk-react';
 import { ArrowLeft, Heart, Bookmark, ChevronDown } from 'lucide-react';
 import { SAMPLE_QUESTIONS, type Question } from '../../constants/questions';
 import { fetchCompanies, type Company } from '../../api/companies';
@@ -10,10 +9,9 @@ import axios from 'axios';
 const QuestionDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useUser();
   const URL = import.meta.env.VITE_API_URL;
   const [question, setQuestion] = useState<Question | undefined>(undefined);
-  const [companies, setCompanies] = useState<Company[]>([]);
+  const [_companies, setCompanies] = useState<Company[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {

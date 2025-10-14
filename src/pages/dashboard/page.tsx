@@ -10,7 +10,7 @@ export default function Dashboard() {
   const URL = import.meta.env.VITE_API_URL
   const { user } = useUser()
   const [questions, setQuestions] = useState<Question[]>([])
-  const [companies, setCompanies] = useState<Company[]>([])
+  const [_companies, setCompanies] = useState<Company[]>([])
   const [visibleQuestions, setVisibleQuestions] = useState(9) // 처음에 9개만 보여줌
   const [isLoading, setIsLoading] = useState(false)
   const [isInitialLoading, setIsInitialLoading] = useState(true)
@@ -44,14 +44,30 @@ export default function Dashboard() {
         }
 
         // API 응답 데이터를 Question 타입에 맞게 변환
-        const apiQuestions: Question[] = questionsData.map((item: any, index: number) => ({
-          id: item.question_id || item.id || index + 1,
-          companyName: item.companyName || item.company || getCompanyName(item.company_id) || '알 수 없음',
-          position: item.position || '개발자', // 기본값 설정
-          questionType: item.category || item.questionType || item.type || '기술면접',
-          question: item.question || item.content || '질문 내용이 없습니다.',
-          companyLogo: item.companyLogo || getCompanyName(item.company_id)?.charAt(0) || '알'
-        }))
+        const apiQuestions: Question[] = questionsData.map((item: any, index: number) => {
+          // category를 간단하게 표시 (예: "프론트엔드 개발자" -> "프론트")
+          const getShortCategory = (category: string): string => {
+            if (category.includes('프론트엔드')) return '프론트'
+            if (category.includes('백엔드')) return '백엔드'
+            if (category.includes('풀스택')) return '풀스택'
+            if (category.includes('데이터')) return '데이터'
+            if (category.includes('AI')) return 'AI'
+            if (category.includes('DevOps')) return 'DevOps'
+            if (category.includes('QA')) return 'QA'
+            if (category.includes('iOS')) return 'iOS'
+            if (category.includes('Android')) return 'Android'
+            return category.split(' ')[0] || '개발자' // 첫 번째 단어만 사용
+          }
+
+          return {
+            id: item.question_id || item.id || index + 1,
+            companyName: item.companyName || item.company || getCompanyName(item.company_id) || '알 수 없음',
+            position: getShortCategory(item.category || '개발자'),
+            questionType: item.tag === 'technology' ? '기술면접' : item.tag === 'tenacity' ? '인성면접' : '기술면접',
+            question: item.question || item.content || '질문 내용이 없습니다.',
+            companyLogo: item.companyLogo || getCompanyName(item.company_id)?.charAt(0) || '알'
+          }
+        })
         
         setQuestions(apiQuestions)
       } catch (err) {

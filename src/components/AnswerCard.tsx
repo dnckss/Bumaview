@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Heart, MessageCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Heart, MessageCircle, ChevronDown } from 'lucide-react';
 
 interface Answer {
   id: number;
