@@ -7,7 +7,7 @@ export default function Home() {
   const navigate = useNavigate()
   const { isSignedIn, isLoaded, user } = useUser()
   const { getToken } = useAuth()
-  const URL = import.meta.env.VITE_API_URL
+  const URL = import.meta.env.VITE_API_URL || 'https://bumaview.comodoapp.net'
   
   useEffect(() => {
     // Clerk가 로드되고 사용자가 로그인되어 있으면 position 페이지로 리다이렉트

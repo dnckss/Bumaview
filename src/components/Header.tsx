@@ -4,7 +4,7 @@ import { useUser, useClerk } from '@clerk/clerk-react';
 import { Settings, LogOut, User } from 'lucide-react';
 
 interface HeaderProps {
-  activeTab?: 'dashboard' | 'generate-question' | 'companies';
+  activeTab?: 'dashboard' | 'generate-question' | 'companies' | 'job-postings';
 }
 
 const Header: React.FC<HeaderProps> = ({ activeTab = 'dashboard' }) => {
@@ -28,11 +28,14 @@ const Header: React.FC<HeaderProps> = ({ activeTab = 'dashboard' }) => {
       case 'dashboard':
         navigate('/dashboard');
         break;
-      case 'generate-question':
-        navigate('/generate-question');
-        break;
       case 'companies':
         navigate('/companies');
+        break;
+      case 'job-postings':
+        navigate('/job-postings');
+        break;
+      case 'generate-question':
+        navigate('/generate-question');
         break;
       default:
         break;
@@ -88,6 +91,12 @@ const Header: React.FC<HeaderProps> = ({ activeTab = 'dashboard' }) => {
           className={getTabStyle('companies')}
         >
           회사
+        </button>
+        <button 
+          onClick={() => handleTabClick('job-postings')}
+          className={getTabStyle('job-postings')}
+        >
+          채용공고
         </button>
       </div>
       

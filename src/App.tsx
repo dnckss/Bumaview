@@ -9,6 +9,8 @@ import QuestionDetail from './pages/questionDetail/page'
 import AnswerDetail from './pages/answerDetail/page'
 import GenerateQuestion from './pages/generateQuestion/page'
 import CompaniesPage from './pages/companies/page'
+import JobPostingsPage from './pages/jobPostings/page'
+import JobPostingDetailPage from './pages/jobPostingDetail/page'
 import ProtectedRoute from './components/ProtectedRoute'
 import { OnboardingProvider } from './contexts/OnboardingContext'
 
@@ -71,6 +73,22 @@ function App() {
           element={
             <ProtectedRoute>
               <CompaniesPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/job-postings" 
+          element={
+            <ProtectedRoute>
+              <JobPostingsPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/job-posting/:id" 
+          element={
+            <ProtectedRoute>
+              <JobPostingDetailPage />
             </ProtectedRoute>
           } 
         />
