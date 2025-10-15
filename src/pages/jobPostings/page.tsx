@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, ChevronDown } from 'lucide-react';
+import { Search, ChevronDown, ArrowUp } from 'lucide-react';
 import Header from '../../components/Header';
 import JobPostingCard from '../../components/JobPostingCard';
 import { fetchJobPostings } from '../../api/jobPostings';
 import type { JobPosting, JobPostingsParams } from '../../api/jobPostings';
-import { fetchCompanies } from '../../api/companies';
+import { fetchAllCompanies } from '../../api/companies';
 import type { Company } from '../../api/companies';
 
 const JobPostingsPage: React.FC = () => {
@@ -13,39 +13,124 @@ const JobPostingsPage: React.FC = () => {
   const [jobPostings, setJobPostings] = useState<JobPosting[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useState<JobPostingsParams>({});
   const [searchInput, setSearchInput] = useState('');
+  const [hasNext, setHasNext] = useState(true);
+  const [cursorId, setCursorId] = useState<number | undefined>(undefined);
+  const [showScrollTop, setShowScrollTop] = useState(false);
   
   const [activeFilterTab, setActiveFilterTab] = useState<string | null>(null);
   const [uniqueEmploymentTypes, setUniqueEmploymentTypes] = useState<string[]>([]);
   const [_uniqueWorkLocations, setUniqueWorkLocations] = useState<string[]>([]);
 
+  const loadJobPostings = useCallback(async (isInitial = false) => {
+    try {
+      if (isInitial) {
+        setIsLoading(true);
+      } else {
+        setLoadingMore(true);
+      }
+      
+      const params = {
+        ...searchParams,
+        cursor_id: cursorId,
+        size: 20
+      };
+      
+      console.log('Loading job postings...', { cursorId, isInitial, params });
+      const jobPostingsData = await fetchJobPostings(params);
+      
+      console.log('Loaded job postings:', jobPostingsData);
+      
+      // 회사 ID를 회사명으로 매핑하는 함수
+      const getCompanyName = (companyId: number): string => {
+        const company = companies.find(c => c.company_id === companyId);
+        return company ? company.company_name : `회사 ${companyId}`;
+      }
+
+      // 채용공고 데이터에 회사명 추가
+      const jobPostingsWithCompanyNames = jobPostingsData.map(job => ({
+        ...job,
+        company_name: getCompanyName(job.company_id)
+      }));
+      
+      if (isInitial) {
+        setJobPostings(jobPostingsWithCompanyNames);
+      } else {
+        // 중복 제거를 위해 ID 기반으로 필터링
+        setJobPostings(prev => {
+          const existingIds = new Set(prev.map(job => job.company_job_posting_id));
+          const newJobs = jobPostingsWithCompanyNames.filter(job => !existingIds.has(job.company_job_posting_id));
+          return [...prev, ...newJobs];
+        });
+      }
+      
+      setHasNext(jobPostingsData.length > 0); // 실제로는 API에서 has_next를 받아야 함
+      setCursorId(jobPostingsData[jobPostingsData.length - 1]?.company_job_posting_id);
+      
+    } catch (error) {
+      console.error('Error loading job postings:', error);
+      setError('채용공고를 불러오는데 실패했습니다.');
+    } finally {
+      setIsLoading(false);
+      setLoadingMore(false);
+    }
+  }, [cursorId, searchParams, companies]);
+
   useEffect(() => {
     const loadData = async () => {
       try {
-        setIsLoading(true);
         setError(null);
+        setHasNext(true);
+        setCursorId(undefined);
         
-        // 회사 정보와 채용공고를 병렬로 가져오기
-        const [jobPostingsData, companiesData] = await Promise.all([
-          fetchJobPostings(searchParams),
-          fetchCompanies()
-        ]);
+        // 회사 정보를 모두 가져오기
+        const companiesData = await fetchAllCompanies();
+        console.log('Companies API Response:', companiesData);
+        setCompanies(companiesData);
         
-        setJobPostings(jobPostingsData);
-        setCompanies(companiesData.values);
+        // 회사 ID를 회사명으로 매핑하는 함수
+        const getCompanyName = (companyId: number): string => {
+          const company = companiesData.find(c => c.company_id === companyId);
+          return company ? company.company_name : `회사 ${companyId}`;
+        }
         
-        // 고유한 고용형태와 근무지역 추출
-        const employmentTypes = [...new Set(jobPostingsData.map(job => job.employment_type))].sort();
-        const workLocations = [...new Set(jobPostingsData.map(job => job.work_location))].sort();
+        // 첫 번째 채용공고 데이터 로드
+        setIsLoading(true);
+        const params = {
+          ...searchParams,
+          cursor_id: undefined,
+          size: 20
+        };
+        
+        console.log('Loading initial job postings...', params);
+        const jobPostingsData = await fetchJobPostings(params);
+        
+        console.log('Loaded initial job postings:', jobPostingsData);
+        
+        // 채용공고 데이터에 회사명 추가
+        const jobPostingsWithCompanyNames = jobPostingsData.map(job => ({
+          ...job,
+          company_name: getCompanyName(job.company_id)
+        }));
+        
+        setJobPostings(jobPostingsWithCompanyNames);
+        setHasNext(jobPostingsData.length > 0);
+        setCursorId(jobPostingsData[jobPostingsData.length - 1]?.company_job_posting_id);
+        setIsLoading(false);
+        
+        // 고유한 고용형태와 근무지역 추출 (전체 데이터에서)
+        const allJobPostings = await fetchJobPostings({});
+        const employmentTypes = [...new Set(allJobPostings.map(job => job.employment_type))].sort();
+        const workLocations = [...new Set(allJobPostings.map(job => job.work_location))].sort();
         
         setUniqueEmploymentTypes(employmentTypes);
         setUniqueWorkLocations(workLocations);
       } catch (err) {
         console.error('데이터를 불러오는데 실패했습니다:', err);
         setError('데이터를 불러오는데 실패했습니다.');
-      } finally {
         setIsLoading(false);
       }
     };
@@ -58,6 +143,9 @@ const JobPostingsPage: React.FC = () => {
       ...prev,
       company_name: searchInput.trim() || undefined,
     }));
+    // 검색 시 무한 스크롤 상태 초기화
+    setCursorId(undefined);
+    setHasNext(true);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -71,21 +159,50 @@ const JobPostingsPage: React.FC = () => {
       ...prev,
       [field]: value === 'all' ? undefined : value,
     }));
+    // 필터 변경 시 무한 스크롤 상태 초기화
+    setCursorId(undefined);
+    setHasNext(true);
   };
 
   const clearFilters = () => {
     setSearchParams({});
     setSearchInput('');
+    // 필터 초기화 시 무한 스크롤 상태 초기화
+    setCursorId(undefined);
+    setHasNext(true);
   };
 
-  const getCompanyName = (companyId: number): string => {
-    const company = companies.find(c => c.company_id === companyId);
-    return company ? company.company_name : `회사 ID: ${companyId}`;
-  };
 
   const handleCardClick = (jobPosting: JobPosting) => {
     navigate(`/job-posting/${jobPosting.company_job_posting_id}`, {
       state: { jobPosting }
+    });
+  };
+
+  const handleScroll = useCallback(() => {
+    const scrollTop = document.documentElement.scrollTop;
+    
+    // 스크롤 위치에 따라 맨 위로 가기 버튼 표시/숨김
+    setShowScrollTop(scrollTop > 300);
+    
+    // 무한 스크롤 처리
+    if (window.innerHeight + scrollTop >= document.documentElement.offsetHeight - 1000) {
+      if (hasNext && !loadingMore && !isLoading) {
+        console.log('Loading more job postings...');
+        loadJobPostings(false);
+      }
+    }
+  }, [hasNext, loadingMore, isLoading, loadJobPostings]);
+
+  useEffect(() => {
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [handleScroll]);
+
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
     });
   };
 
@@ -409,17 +526,43 @@ const JobPostingsPage: React.FC = () => {
                 <JobPostingCard
                   key={jobPosting.company_job_posting_id}
                   jobPosting={jobPosting}
-                  companyName={getCompanyName(jobPosting.company_id)}
+                  companyName={(jobPosting as any).company_name}
                   onCardClick={handleCardClick}
                 />
               ))}
             </div>
 
-            {/* Load More Button */}
-          
+            {/* Load More Section */}
+            {/* 로딩 인디케이터 */}
+            {loadingMore && (
+              <div className="flex justify-center py-8">
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                  <span className="text-white text-sm">더 많은 채용공고를 불러오는 중...</span>
+                </div>
+              </div>
+            )}
+
+            {/* 더 이상 데이터가 없을 때 */}
+            {!hasNext && jobPostings.length > 0 && (
+              <div className="flex justify-center py-8">
+                <span className="text-gray-400 text-sm">모든 채용공고를 불러왔습니다.</span>
+              </div>
+            )}
           </>
         )}
       </main>
+
+      {/* 맨 위로 가기 버튼 */}
+      {showScrollTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-8 right-8 bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-full shadow-lg transition-all duration-300 z-50"
+          aria-label="맨 위로 가기"
+        >
+          <ArrowUp className="w-6 h-6" />
+        </button>
+      )}
     </div>
   );
 };
