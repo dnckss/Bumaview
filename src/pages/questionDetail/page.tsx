@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Edit, X } from 'lucide-react';
 import { SAMPLE_QUESTIONS, type Question } from '../../constants/questions';
 import { fetchCompanies, type Company } from '../../api/companies';
 import Header from '../../components/Header';
@@ -17,6 +17,12 @@ const QuestionDetailPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [answerText, setAnswerText] = useState('');
   const [isSubmittingAnswer, setIsSubmittingAnswer] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [editQuestion, setEditQuestion] = useState('');
+  const [editCategory, setEditCategory] = useState('');
+  const [editTag, setEditTag] = useState('');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const { getToken } = useAuth()
   useEffect(() => {
@@ -33,20 +39,20 @@ const QuestionDetailPage: React.FC = () => {
           console.log('Question API Response:', questionResponse.data);
           
           // 회사 데이터 저장
-          setCompanies(companiesData);
+          setCompanies(companiesData.values);
           
           const questionData = questionResponse.data;
           
           // 회사 ID를 회사명으로 매핑하는 함수
           const getCompanyName = (companyId: number): string => {
-            const company = companiesData.find(c => c.company_id === companyId);
+            const company = companiesData.values.find(c => c.company_id === companyId);
             return company ? company.company_name : `회사 ${companyId}`;
           };
           
           const apiQuestion: Question = {
             id: questionData.question_id || questionData.id || parseInt(id),
             companyName: questionData.companyName || questionData.company || getCompanyName(questionData.company_id) || '알 수 없음',
-            position: questionData.position || '개발자', // 기본값 설정
+            category: questionData.category || '개발자', // 기본값 설정
             questionType: questionData.category || questionData.questionType || questionData.type || '기술면접',
             question: questionData.question || questionData.content || '질문 내용이 없습니다.',
             companyLogo: questionData.companyLogo || getCompanyName(questionData.company_id)?.charAt(0) || '알'
@@ -128,6 +134,92 @@ const QuestionDetailPage: React.FC = () => {
     }
   };
 
+  const handleDeleteQuestion = async () => {
+    if (!id) return;
+    
+    // 삭제 확인
+    const confirmDelete = window.confirm('정말로 이 질문을 삭제하시겠습니까?\n삭제된 질문은 복구할 수 없습니다.');
+    if (!confirmDelete) return;
+    
+    setIsDeleting(true);
+    try {
+      const token = await getToken();
+      const response = await axios.delete(`${URL}/questions/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        withCredentials: false
+      });
+      
+      console.log('질문 삭제 성공:', response.data);
+      alert('질문이 성공적으로 삭제되었습니다.');
+      
+      // 대시보드로 이동
+      navigate('/dashboard');
+      
+    } catch (error) {
+      console.error('질문 삭제 실패:', error);
+      alert('질문 삭제에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleEditClick = () => {
+    if (question) {
+      setEditQuestion(question.question);
+      setEditCategory(question.category);
+      setEditTag(question.questionType === '기술면접' ? 'technology' : 'tenacity');
+      setIsEditing(true);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditQuestion('');
+    setEditCategory('');
+    setEditTag('');
+  };
+
+  const handleUpdateQuestion = async () => {
+    if (!id || !editQuestion.trim()) return;
+    
+    setIsUpdating(true);
+    try {
+      const token = await getToken();
+      const response = await axios.patch(`${URL}/questions/${id}`, {
+        question: editQuestion.trim(),
+        category: editCategory.trim(),
+        tag: editTag
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        withCredentials: false
+      });
+      
+      console.log('질문 수정 성공:', response.data);
+      alert('질문이 성공적으로 수정되었습니다.');
+      
+      // 수정된 내용으로 질문 상태 업데이트
+      setQuestion(prev => prev ? {
+        ...prev,
+        question: editQuestion.trim(),
+        position: editCategory.trim(),
+        questionType: editTag === 'technology' ? '기술면접' : '인성면접'
+      } : prev);
+      
+      setIsEditing(false);
+      
+    } catch (error) {
+      console.error('질문 수정 실패:', error);
+      alert('질문 수정에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   // 답변 데이터를 가져오는 헬퍼 함수들
   const getAnswerContent = (answerId: number): string => {
     const answers = {
@@ -181,12 +273,61 @@ const QuestionDetailPage: React.FC = () => {
 
       {/* Main Content */}
       <main className="max-w-[1360px] mx-auto px-10 py-10">
-        {/* Back Button */}
-        <div className="flex items-center gap-1 mb-12 cursor-pointer" onClick={handleBackClick}>
-          <div className="w-5 h-5">
-            <ArrowLeft className="w-4 h-4 text-blue-500 m-0.5" />
+        {/* Back Button and Delete Button */}
+        <div className="flex items-center justify-between mb-12">
+          <div className="flex items-center gap-1 cursor-pointer" onClick={handleBackClick}>
+            <div className="w-5 h-5">
+              <ArrowLeft className="w-4 h-4 text-blue-500 m-0.5" />
+            </div>
+            <span className="text-blue-500 text-sm font-medium">질문 목록</span>
           </div>
-          <span className="text-blue-500 text-sm font-medium">질문 목록</span>
+          
+          {/* Edit and Delete Buttons */}
+          <div className="flex items-center gap-3">
+            {!isEditing ? (
+              <>
+                <button
+                  onClick={handleEditClick}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-colors bg-blue-500 hover:bg-blue-600 text-white"
+                >
+                  <Edit className="w-4 h-4" />
+                  수정
+                </button>
+                <button
+                  onClick={handleDeleteQuestion}
+                  disabled={isDeleting}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-colors ${
+                    isDeleting
+                      ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                      : 'bg-red-500 hover:bg-red-600 text-white'
+                  }`}
+                >
+                  {isDeleting ? '삭제 중...' : '삭제'}
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={handleUpdateQuestion}
+                  disabled={isUpdating || !editQuestion.trim()}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-colors ${
+                    isUpdating || !editQuestion.trim()
+                      ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                      : 'bg-green-500 hover:bg-green-600 text-white'
+                  }`}
+                >
+                  {isUpdating ? '저장 중...' : '저장'}
+                </button>
+                <button
+                  onClick={handleCancelEdit}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-colors bg-gray-500 hover:bg-gray-600 text-white"
+                >
+                  <X className="w-4 h-4" />
+                  취소
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Question Info Section */}
@@ -195,19 +336,50 @@ const QuestionDetailPage: React.FC = () => {
             {/* Company Tag */}
             <div className="bg-[#1f2937] rounded-2xl px-6 py-3 flex items-center gap-3">
               <span className="text-blue-500 font-semibold text-sm">{question?.companyName}</span>
-              <span className="text-gray-400 text-sm">{question?.position}</span>
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={editCategory}
+                  onChange={(e) => setEditCategory(e.target.value)}
+                  className="bg-[#2a2f36] border border-[#374151] rounded-lg px-2 py-1 text-white text-sm focus:outline-none focus:border-blue-500"
+                  placeholder="직무"
+                />
+              ) : (
+                <span className="text-gray-400 text-sm">{question?.category}</span>
+              )}
             </div>
 
             {/* Priority Badge */}
-            <div className="bg-blue-500 rounded-2xl px-4 py-2">
-              <span className="text-white text-sm m-2 font-semibold">{question?.questionType}</span>
-            </div>
+            {isEditing ? (
+              <select
+                value={editTag}
+                onChange={(e) => setEditTag(e.target.value)}
+                className="bg-[#2a2f36] border border-[#374151] rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:border-blue-500"
+              >
+                <option value="technology">기술면접</option>
+                <option value="tenacity">인성면접</option>
+              </select>
+            ) : (
+              <div className="bg-blue-500 rounded-2xl px-4 py-2">
+                <span className="text-white text-sm m-2 font-semibold">{question?.questionType}</span>
+              </div>
+            )}
           </div>
 
           {/* Question Title */}
-          <h1 className="text-white text-lg font-semibold leading-7">
-            {question?.question}
-          </h1>
+          {isEditing ? (
+            <textarea
+              value={editQuestion}
+              onChange={(e) => setEditQuestion(e.target.value)}
+              className="w-full bg-[#2a2f36] border border-[#374151] rounded-xl p-4 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 resize-none"
+              rows={4}
+              placeholder="질문 내용을 입력하세요..."
+            />
+          ) : (
+            <h1 className="text-white text-lg font-semibold leading-7">
+              {question?.question}
+            </h1>
+          )}
         </div>
 
         {/* Answer Input Section */}

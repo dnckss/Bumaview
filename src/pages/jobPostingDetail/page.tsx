@@ -24,7 +24,7 @@ const JobPostingDetailPage: React.FC = () => {
 
         // 회사 정보 가져오기
         const companiesData = await fetchCompanies();
-        setCompanies(companiesData);
+        setCompanies(companiesData.values);
 
         // URL에서 jobPosting 데이터 가져오기 (navigate state에서 전달됨)
         const jobPostingData = location.state?.jobPosting as JobPosting;

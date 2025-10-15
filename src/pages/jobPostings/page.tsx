@@ -34,7 +34,7 @@ const JobPostingsPage: React.FC = () => {
         ]);
         
         setJobPostings(jobPostingsData);
-        setCompanies(companiesData);
+        setCompanies(companiesData.values);
         
         // 고유한 고용형태와 근무지역 추출
         const employmentTypes = [...new Set(jobPostingsData.map(job => job.employment_type))].sort();
@@ -98,9 +98,7 @@ const JobPostingsPage: React.FC = () => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-white text-3xl font-bold mb-2">채용공고</h1>
-          <p className="text-gray-400 text-lg">
-            {isLoading ? '로딩 중...' : `${jobPostings.length}개의 채용공고`}
-          </p>
+          
         </div>
 
         {/* Search Bar */}

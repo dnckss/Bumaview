@@ -94,8 +94,8 @@ const GenerateQuestionPage: React.FC = () => {
     const fetchCompaniesData = async () => {
       try {
         const companiesData = await fetchCompanies();
-        setCompanies(companiesData);
-        setFilteredCompanies(companiesData);
+        setCompanies(companiesData.values);
+        setFilteredCompanies(companiesData.values);
       } catch (error) {
         console.error('회사 데이터 로딩 실패:', error);
       }
