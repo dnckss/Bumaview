@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@clerk/clerk-react';
-import { Check } from 'lucide-react';
+import { Check, Upload, FileText } from 'lucide-react';
 import { positions } from '../../constants/positions';
 import { fetchCompanies, type Company } from '../../api/companies';
 import Header from '../../components/Header';
@@ -32,12 +32,147 @@ const GenerateQuestionPage: React.FC = () => {
   const [showCompanyDropdown, setShowCompanyDropdown] = useState(false);
   const [showMainContent, setShowMainContent] = useState(false);
   const [showRegistration, setShowRegistration] = useState(false);
+  const [showSelectionScreen, setShowSelectionScreen] = useState(true);
+  const [selectedMode, setSelectedMode] = useState<'single' | 'csv' | null>(null);
+  const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [isUploadingCsv, setIsUploadingCsv] = useState(false);
   const [apiPositions, setApiPositions] = useState<string[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [filteredCompanies, setFilteredCompanies] = useState<Company[]>([]);
   const [isLoadingPositions, setIsLoadingPositions] = useState(false);
 
   const questionTypes = ['기술 면접', '인성 면접'];
+
+  // 선택지 화면 핸들러
+  const handleModeSelection = (mode: 'single' | 'csv') => {
+    setSelectedMode(mode);
+    setShowSelectionScreen(false);
+    if (mode === 'single') {
+      setShowRegistration(true);
+    }
+  };
+
+  // CSV 샘플 다운로드
+  const handleDownloadSample = async () => {
+    try {
+      const URL = import.meta.env.VITE_API_URL;
+      const token = await getToken();
+      
+      const response = await axios.get(`${URL}/questions/sample-csv`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        responseType: 'blob'
+      });
+      
+      // Blob을 파일로 다운로드
+      const blob = new Blob([response.data], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'questions_sample.csv';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('샘플 파일 다운로드 실패:', error);
+      alert('샘플 파일 다운로드에 실패했습니다.');
+    }
+  };
+
+  // CSV 파일 정규화 함수
+  const normalizeCsvContent = (csvText: string): string => {
+    const lines = csvText.split('\n');
+    if (lines.length === 0) return csvText;
+
+    // 첫 번째 줄 (헤더) 정규화
+    const headerLine = lines[0];
+    const normalizedHeader = headerLine
+      .split(',')
+      .map(col => col.trim().toLowerCase()) // 공백 제거 및 소문자 변환
+      .join(',');
+    
+    // 헤더 매핑 (다양한 컬럼명을 표준 컬럼명으로 변환)
+    const headerMapping: { [key: string]: string } = {
+      '회사': 'company',
+      '회사명': 'company',
+      'company': 'company',
+      '질문': 'question',
+      'question': 'question',
+      '포지션': 'category',
+      '직무': 'category',
+      'category': 'category',
+      '면접날짜': 'question_at',
+      '날짜': 'question_at',
+      'question_at': 'question_at',
+      'date': 'question_at'
+    };
+
+    const headerColumns = normalizedHeader.split(',');
+    const mappedHeader = headerColumns.map(col => headerMapping[col] || col).join(',');
+    
+    // 데이터 라인들 정규화 (공백 제거)
+    const dataLines = lines.slice(1).map(line => {
+      return line.split(',')
+        .map(cell => cell.trim()) // 각 셀의 공백 제거
+        .join(',');
+    });
+
+    // 빈 줄 제거
+    const filteredDataLines = dataLines.filter(line => line.trim() !== '');
+
+    return [mappedHeader, ...filteredDataLines].join('\n');
+  };
+
+  // CSV 파일 업로드
+  const handleCsvUpload = async () => {
+    if (!csvFile) {
+      alert('CSV 파일을 선택해주세요.');
+      return;
+    }
+
+    setIsUploadingCsv(true);
+    try {
+      const URL = import.meta.env.VITE_API_URL;
+      const token = await getToken();
+      
+      // CSV 파일 내용 읽기
+      const csvText = await csvFile.text();
+      console.log('원본 CSV 내용:', csvText);
+      
+      // CSV 내용 정규화
+      const normalizedCsv = normalizeCsvContent(csvText);
+      console.log('정규화된 CSV 내용:', normalizedCsv);
+      
+      // 정규화된 CSV를 Blob으로 변환
+      const normalizedBlob = new Blob([normalizedCsv], { type: 'text/csv' });
+      const normalizedFile = new File([normalizedBlob], csvFile.name, { type: 'text/csv' });
+      
+      const formData = new FormData();
+      formData.append('question', normalizedFile);
+      
+      const response = await axios.post(`${URL}/questions/`, formData, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      console.log('CSV 업로드 성공:', response.data);
+      alert('CSV 파일이 성공적으로 업로드되었습니다.');
+      
+      // 성공 후 선택지 화면으로 돌아가기
+      setSelectedMode(null);
+      setShowSelectionScreen(true);
+      setCsvFile(null);
+      
+    } catch (error) {
+      console.error('CSV 업로드 실패:', error);
+      alert('CSV 업로드에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setIsUploadingCsv(false);
+    }
+  };
 
   const handleInputChange = (field: keyof FormData, value: string | number) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -220,6 +355,7 @@ const GenerateQuestionPage: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -268,6 +404,143 @@ const GenerateQuestionPage: React.FC = () => {
     }
   };
 
+  // 선택지 화면
+  if (showSelectionScreen) {
+    return (
+      <div className="min-h-screen bg-[#0B0B0C] flex flex-col">
+        <Header activeTab="generate-question" />
+        
+        <div className="flex-1 flex items-center justify-center px-6 py-8 mb-20">
+          <div className="max-w-4xl w-full">
+            <div className="bg-[#171A1F] rounded-2xl p-8">
+              <h1 className="text-white text-2xl font-bold mb-8 text-center">
+                면접 질문 등록
+              </h1>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* 단건 질문 등록 */}
+                <div 
+                  className="bg-[#1F2937] rounded-xl p-6 cursor-pointer hover:bg-[#374151] transition-colors border border-[#374151] hover:border-blue-500"
+                  onClick={() => handleModeSelection('single')}
+                >
+                  <div className="flex items-center mb-4">
+                    <div className="bg-blue-500 rounded-lg p-3 mr-4">
+                      <FileText className="w-6 h-6 text-white" />
+                    </div>
+                    <h3 className="text-white text-lg font-semibold">단건 질문 등록</h3>
+                  </div>
+                  <p className="text-gray-400 text-sm">
+                    하나씩 질문을 직접 입력하여 등록합니다.
+                  </p>
+                </div>
+                
+                {/* CSV 업로드 */}
+                <div 
+                  className="bg-[#1F2937] rounded-xl p-6 cursor-pointer hover:bg-[#374151] transition-colors border border-[#374151] hover:border-blue-500"
+                  onClick={() => handleModeSelection('csv')}
+                >
+                  <div className="flex items-center mb-4">
+                    <div className="bg-blue-500 rounded-lg p-3 mr-4">
+                      <Upload className="w-6 h-6 text-white" />
+                    </div>
+                    <h3 className="text-white text-lg font-semibold">CSV 파일 업로드</h3>
+                  </div>
+                  <p className="text-gray-400 text-sm">
+                    CSV 파일을 통해 여러 질문을 한번에 등록합니다.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // CSV 업로드 화면
+  if (selectedMode === 'csv') {
+    return (
+      <div className="min-h-screen bg-[#0B0B0C]">
+        <Header activeTab="generate-question" />
+        
+        <div className="max-w-4xl mx-auto px-6 py-8">
+          <div className="bg-[#171A1F] rounded-2xl p-8">
+            <div className="flex items-center justify-between mb-8">
+              <h1 className="text-white text-2xl font-bold">
+                CSV 파일 업로드
+              </h1>
+              <button
+                onClick={() => {
+                  setSelectedMode(null);
+                  setShowSelectionScreen(true);
+                }}
+                className="text-gray-400 hover:text-white text-sm"
+              >
+                ← 돌아가기
+              </button>
+            </div>
+            
+            <div className="space-y-6">
+              {/* 샘플 다운로드 */}
+              <div className="bg-[#1F2937] rounded-xl p-6">
+                <h3 className="text-white text-lg font-semibold mb-4">1. 샘플 파일 다운로드</h3>
+                <p className="text-gray-400 text-sm mb-4">
+                  CSV 파일 형식을 확인하기 위해 샘플 파일을 다운로드하세요.
+                </p>
+                {/* <div className="bg-[#0f1115] rounded-lg p-4 mb-4">
+                  <h4 className="text-blue-400 text-sm font-semibold mb-2">필수 컬럼명:</h4>
+                  <div className="text-gray-300 text-sm space-y-1">
+                    <div>• <code className="bg-gray-700 px-1 rounded">company</code> - 회사명</div>
+                    <div>• <code className="bg-gray-700 px-1 rounded">question</code> - 질문 내용</div>
+                    <div>• <code className="bg-gray-700 px-1 rounded">category</code> - 직무/포지션</div>
+                    <div>• <code className="bg-gray-700 px-1 rounded">question_at</code> - 면접 날짜 (YYYY-MM-DD)</div>
+                  </div>
+                </div> */}
+                <button
+                  onClick={handleDownloadSample}
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                >
+                  샘플 CSV 다운로드
+                </button>
+              </div>
+              
+              {/* 파일 업로드 */}
+              <div className="bg-[#1F2937] rounded-xl p-6">
+                <h3 className="text-white text-lg font-semibold mb-4">2. CSV 파일 업로드</h3>
+                
+                <div className="space-y-4">
+                  <input
+                    type="file"
+                    accept=".csv"
+                    onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
+                    className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-500 file:text-white hover:file:bg-blue-600 file:cursor-pointer cursor-pointer"
+                  />
+                  {csvFile && (
+                    <p className="text-blue-400 text-sm">
+                      선택된 파일: {csvFile.name}
+                    </p>
+                  )}
+                  <button
+                    onClick={handleCsvUpload}
+                    disabled={!csvFile || isUploadingCsv}
+                    className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                      !csvFile || isUploadingCsv
+                        ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                        : 'bg-blue-500 hover:bg-blue-600 text-white'
+                    }`}
+                  >
+                    {isUploadingCsv ? '업로드 중...' : 'CSV 파일 업로드'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 단건 질문 등록 화면 (기존 코드)
   return (
     <div className="min-h-screen bg-[#0B0B0C]">
       <Header activeTab="generate-question" />
@@ -281,9 +554,21 @@ const GenerateQuestionPage: React.FC = () => {
             ? 'opacity-100 translate-y-0' 
             : 'opacity-0 translate-y-8'
         }`}>
-          <h1 className="text-white text-[28px] font-bold mb-4">
-            면접 질문 등록
-          </h1>
+          <div className="flex items-center justify-between mb-4">
+            <button
+              onClick={() => {
+                setSelectedMode(null);
+                setShowSelectionScreen(true);
+              }}
+              className="text-gray-400 hover:text-white text-sm"
+            >
+              ← 돌아가기
+            </button>
+            <h1 className="text-white text-[28px] font-bold">
+              단건 질문 등록
+            </h1>
+            <div className="w-16"></div> {/* Spacer for centering */}
+          </div>
           <p className="text-gray-400 text-base leading-6">
             실제 면접에서 받았던 질문을 공유해주세요.<br />
             다른 지원자들에게 큰 도움이 됩니다.
@@ -550,6 +835,7 @@ const GenerateQuestionPage: React.FC = () => {
         </div>
       </div>
     </div>
+    
   );
 };
 
