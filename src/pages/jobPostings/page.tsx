@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Filter, ChevronDown } from 'lucide-react';
+import { Search, ChevronDown } from 'lucide-react';
 import Header from '../../components/Header';
 import JobPostingCard from '../../components/JobPostingCard';
 import { fetchJobPostings } from '../../api/jobPostings';
