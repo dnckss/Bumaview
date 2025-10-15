@@ -5,6 +5,7 @@ import { positions } from '../../constants/positions';
 import { fetchCompanies, type Company } from '../../api/companies';
 import Header from '../../components/Header';
 import axios from 'axios';
+import * as XLSX from 'xlsx';
 
 
 interface FormData {
@@ -81,6 +82,27 @@ const GenerateQuestionPage: React.FC = () => {
     }
   };
 
+  // XLSX 파일을 CSV로 변환하는 함수
+  const convertXlsxToCsv = async (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const sheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[sheetName];
+          const csv = XLSX.utils.sheet_to_csv(worksheet);
+          resolve(csv);
+        } catch (error) {
+          reject(error);
+        }
+      };
+      reader.onerror = () => reject(new Error('파일 읽기 실패'));
+      reader.readAsArrayBuffer(file);
+    });
+  };
+
   // CSV 파일 정규화 함수
   const normalizeCsvContent = (csvText: string): string => {
     const lines = csvText.split('\n');
@@ -125,10 +147,10 @@ const GenerateQuestionPage: React.FC = () => {
     return [mappedHeader, ...filteredDataLines].join('\n');
   };
 
-  // CSV 파일 업로드
+  // 파일 업로드 (CSV, XLSX 지원)
   const handleCsvUpload = async () => {
     if (!csvFile) {
-      alert('CSV 파일을 선택해주세요.');
+      alert('파일을 선택해주세요.');
       return;
     }
 
@@ -137,9 +159,21 @@ const GenerateQuestionPage: React.FC = () => {
       const URL = import.meta.env.VITE_API_URL;
       const token = await getToken();
       
-      // CSV 파일 내용 읽기
-      const csvText = await csvFile.text();
-      console.log('원본 CSV 내용:', csvText);
+      let csvText: string;
+      
+      // 파일 확장자에 따라 처리 방식 결정
+      const fileExtension = csvFile.name.toLowerCase().split('.').pop();
+      
+      if (fileExtension === 'xlsx' || fileExtension === 'xls') {
+        // XLSX 파일을 CSV로 변환
+        console.log('XLSX 파일 변환 중...');
+        csvText = await convertXlsxToCsv(csvFile);
+        console.log('변환된 CSV 내용:', csvText);
+      } else {
+        // CSV 파일 직접 읽기
+        csvText = await csvFile.text();
+        console.log('원본 CSV 내용:', csvText);
+      }
       
       // CSV 내용 정규화
       const normalizedCsv = normalizeCsvContent(csvText);
@@ -147,10 +181,10 @@ const GenerateQuestionPage: React.FC = () => {
       
       // 정규화된 CSV를 Blob으로 변환
       const normalizedBlob = new Blob([normalizedCsv], { type: 'text/csv' });
-      const normalizedFile = new File([normalizedBlob], csvFile.name, { type: 'text/csv' });
+      const normalizedFile = new File([normalizedBlob], csvFile.name.replace(/\.(xlsx|xls)$/, '.csv'), { type: 'text/csv' });
       
       const formData = new FormData();
-      formData.append('question', normalizedFile);
+      formData.append('file', normalizedFile);
       
       const response = await axios.post(`${URL}/questions/`, formData, {
         headers: {
@@ -158,8 +192,8 @@ const GenerateQuestionPage: React.FC = () => {
         }
       });
       
-      console.log('CSV 업로드 성공:', response.data);
-      alert('CSV 파일이 성공적으로 업로드되었습니다.');
+      console.log('파일 업로드 성공:', response.data);
+      alert('파일이 성공적으로 업로드되었습니다.');
       
       // 성공 후 선택지 화면으로 돌아가기
       setSelectedMode(null);
@@ -167,8 +201,8 @@ const GenerateQuestionPage: React.FC = () => {
       setCsvFile(null);
       
     } catch (error) {
-      console.error('CSV 업로드 실패:', error);
-      alert('CSV 업로드에 실패했습니다. 다시 시도해주세요.');
+      console.error('파일 업로드 실패:', error);
+      alert('파일 업로드에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setIsUploadingCsv(false);
     }
@@ -443,11 +477,11 @@ const GenerateQuestionPage: React.FC = () => {
                     <div className="bg-blue-500 rounded-lg p-3 mr-4">
                       <Upload className="w-6 h-6 text-white" />
                     </div>
-                    <h3 className="text-white text-lg font-semibold">CSV 파일 업로드</h3>
-                  </div>
-                  <p className="text-gray-400 text-sm">
-                    CSV 파일을 통해 여러 질문을 한번에 등록합니다.
-                  </p>
+                  <h3 className="text-white text-lg font-semibold">파일 업로드</h3>
+                </div>
+                <p className="text-gray-400 text-sm">
+                  CSV 또는 Excel 파일을 통해 여러 질문을 한번에 등록합니다.
+                </p>
                 </div>
               </div>
             </div>
@@ -467,7 +501,7 @@ const GenerateQuestionPage: React.FC = () => {
           <div className="rounded-2xl p-8">
             <div className="flex items-center justify-between mb-8">
               <h1 className="text-white text-2xl font-bold">
-                CSV 파일 업로드
+                파일 업로드 (CSV, XLSX)
               </h1>
               <button
                 onClick={() => {
@@ -506,12 +540,12 @@ const GenerateQuestionPage: React.FC = () => {
               
               {/* 파일 업로드 */}
               <div className="rounded-xl p-6">
-                <h3 className="text-white text-lg font-semibold mb-4">2. CSV 파일 업로드</h3>
+                <h3 className="text-white text-lg font-semibold mb-4">2. 파일 업로드 (CSV, XLSX 지원)</h3>
                 
                 <div className="space-y-4">
                   <input
                     type="file"
-                    accept=".csv"
+                    accept=".csv,.xlsx,.xls"
                     onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
                     className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-500 file:text-white hover:file:bg-blue-600 file:cursor-pointer cursor-pointer"
                   />
@@ -529,7 +563,7 @@ const GenerateQuestionPage: React.FC = () => {
                         : 'bg-blue-500 hover:bg-blue-600 text-white'
                     }`}
                   >
-                    {isUploadingCsv ? '업로드 중...' : 'CSV 파일 업로드'}
+                    {isUploadingCsv ? '업로드 중...' : '파일 업로드'}
                   </button>
                 </div>
               </div>
