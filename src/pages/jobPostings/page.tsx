@@ -9,7 +9,7 @@ import { useCompanies } from '../../contexts/CompaniesContext';
 
 const JobPostingsPage: React.FC = () => {
   const navigate = useNavigate();
-  const { getCompanyName } = useCompanies();
+  const { getCompanyName, loadCompanies, companies } = useCompanies();
   const [jobPostings, setJobPostings] = useState<JobPosting[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -79,6 +79,12 @@ const JobPostingsPage: React.FC = () => {
         setHasNext(true);
         setCursorId(undefined);
         
+        // 회사 데이터가 없으면 먼저 로드
+        if (companies.length === 0) {
+          console.log('Loading companies data first...');
+          await loadCompanies();
+        }
+        
         // 첫 번째 채용공고 데이터 로드
         setIsLoading(true);
         const params = {
@@ -118,7 +124,7 @@ const JobPostingsPage: React.FC = () => {
     };
 
     loadData();
-  }, [searchParams, getCompanyName]);
+  }, [searchParams, getCompanyName, companies.length, loadCompanies]);
 
   const handleSearch = () => {
     setSearchParams(prev => ({
