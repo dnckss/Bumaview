@@ -137,14 +137,7 @@ const CompaniesPage: React.FC = () => {
                             </h1>
                             
                         </div>
-                        <div className="text-right">
-                            <div className="text-xs text-[#6B7280] font-medium uppercase tracking-wide">
-                                총 회사 수
-                            </div>
-                            <div className="text-lg font-semibold text-[#F9FAFB]">
-                                {companies.length}
-                            </div>
-                        </div>
+                    
                     </div>
                 </div>
 
