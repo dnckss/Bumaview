@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import React, { createContext, useContext, useState, type ReactNode } from 'react';
 import { fetchAllCompanies, type Company } from '../api/companies';
 
 interface CompaniesContextType {
