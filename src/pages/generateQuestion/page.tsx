@@ -412,7 +412,7 @@ const GenerateQuestionPage: React.FC = () => {
         
         <div className="flex-1 flex items-center justify-center px-6 py-8 mb-20">
           <div className="max-w-4xl w-full">
-            <div className="bg-[#171A1F] rounded-2xl p-8">
+            <div className="rounded-2xl p-8">
               <h1 className="text-white text-2xl font-bold mb-8 text-center">
                 면접 질문 등록
               </h1>
@@ -464,7 +464,7 @@ const GenerateQuestionPage: React.FC = () => {
         <Header activeTab="generate-question" />
         
         <div className="max-w-4xl mx-auto px-6 py-8">
-          <div className="bg-[#171A1F] rounded-2xl p-8">
+          <div className="rounded-2xl p-8">
             <div className="flex items-center justify-between mb-8">
               <h1 className="text-white text-2xl font-bold">
                 CSV 파일 업로드
@@ -482,7 +482,7 @@ const GenerateQuestionPage: React.FC = () => {
             
             <div className="space-y-6">
               {/* 샘플 다운로드 */}
-              <div className="bg-[#1F2937] rounded-xl p-6">
+              <div className="rounded-xl p-6">
                 <h3 className="text-white text-lg font-semibold mb-4">1. 샘플 파일 다운로드</h3>
                 <p className="text-gray-400 text-sm mb-4">
                   CSV 파일 형식을 확인하기 위해 샘플 파일을 다운로드하세요.
@@ -505,7 +505,7 @@ const GenerateQuestionPage: React.FC = () => {
               </div>
               
               {/* 파일 업로드 */}
-              <div className="bg-[#1F2937] rounded-xl p-6">
+              <div className="rounded-xl p-6">
                 <h3 className="text-white text-lg font-semibold mb-4">2. CSV 파일 업로드</h3>
                 
                 <div className="space-y-4">
