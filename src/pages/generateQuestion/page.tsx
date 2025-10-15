@@ -184,7 +184,7 @@ const GenerateQuestionPage: React.FC = () => {
       const normalizedFile = new File([normalizedBlob], csvFile.name.replace(/\.(xlsx|xls)$/, '.csv'), { type: 'text/csv' });
       
       const formData = new FormData();
-      formData.append('file', normalizedFile);
+      formData.append('question', normalizedFile);
       
       const response = await axios.post(`${URL}/questions/`, formData, {
         headers: {
