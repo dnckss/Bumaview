@@ -5,13 +5,12 @@ import Header from '../../components/Header';
 import JobPostingCard from '../../components/JobPostingCard';
 import { fetchJobPostings } from '../../api/jobPostings';
 import type { JobPosting, JobPostingsParams } from '../../api/jobPostings';
-import { fetchAllCompanies } from '../../api/companies';
-import type { Company } from '../../api/companies';
+import { useCompanies } from '../../contexts/CompaniesContext';
 
 const JobPostingsPage: React.FC = () => {
   const navigate = useNavigate();
+  const { getCompanyName } = useCompanies();
   const [jobPostings, setJobPostings] = useState<JobPosting[]>([]);
-  const [companies, setCompanies] = useState<Company[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,12 +43,6 @@ const JobPostingsPage: React.FC = () => {
       
       console.log('Loaded job postings:', jobPostingsData);
       
-      // 회사 ID를 회사명으로 매핑하는 함수
-      const getCompanyName = (companyId: number): string => {
-        const company = companies.find(c => c.company_id === companyId);
-        return company ? company.company_name : `회사 ${companyId}`;
-      }
-
       // 채용공고 데이터에 회사명 추가
       const jobPostingsWithCompanyNames = jobPostingsData.map(job => ({
         ...job,
@@ -77,7 +70,7 @@ const JobPostingsPage: React.FC = () => {
       setIsLoading(false);
       setLoadingMore(false);
     }
-  }, [cursorId, searchParams, companies]);
+  }, [cursorId, searchParams, getCompanyName]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -85,17 +78,6 @@ const JobPostingsPage: React.FC = () => {
         setError(null);
         setHasNext(true);
         setCursorId(undefined);
-        
-        // 회사 정보를 모두 가져오기
-        const companiesData = await fetchAllCompanies();
-        console.log('Companies API Response:', companiesData);
-        setCompanies(companiesData);
-        
-        // 회사 ID를 회사명으로 매핑하는 함수
-        const getCompanyName = (companyId: number): string => {
-          const company = companiesData.find(c => c.company_id === companyId);
-          return company ? company.company_name : `회사 ${companyId}`;
-        }
         
         // 첫 번째 채용공고 데이터 로드
         setIsLoading(true);
@@ -136,7 +118,7 @@ const JobPostingsPage: React.FC = () => {
     };
 
     loadData();
-  }, [searchParams]);
+  }, [searchParams, getCompanyName]);
 
   const handleSearch = () => {
     setSearchParams(prev => ({

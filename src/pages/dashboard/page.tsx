@@ -3,15 +3,15 @@ import { useUser } from '@clerk/clerk-react'
 import QuestionCard from '../../components/QuestionCard'
 import Header from '../../components/Header'
 import { SAMPLE_QUESTIONS, type Question } from '../../constants/questions'
-import { fetchAllCompanies, type Company } from '../../api/companies'
 import { fetchQuestions, type Question as ApiQuestion } from '../../api/questions'
 import { ArrowUp } from 'lucide-react'
+import { useCompanies } from '../../contexts/CompaniesContext'
 
 export default function Dashboard() {
   const URL = import.meta.env.VITE_API_URL
   const { user } = useUser()
+  const { companies, getCompanyName, loadCompanies } = useCompanies()
   const [questions, setQuestions] = useState<Question[]>([])
-  const [_companies, setCompanies] = useState<Company[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
   const [isInitialLoading, setIsInitialLoading] = useState(true)
@@ -36,11 +36,6 @@ export default function Dashboard() {
       
       console.log('Loaded questions:', response);
       
-      // 회사 ID를 회사명으로 매핑하는 함수
-      const getCompanyName = (companyId: number): string => {
-        const company = _companies.find(c => c.company_id === companyId);
-        return company ? company.company_name : `회사 ${companyId}`;
-      }
 
       // API 응답 데이터를 Question 타입에 맞게 변환
       const apiQuestions: Question[] = response.values.map((item: ApiQuestion, index: number) => {
@@ -88,7 +83,7 @@ export default function Dashboard() {
       setIsLoading(false);
       setLoadingMore(false);
     }
-  }, [cursorId, _companies]);
+  }, [cursorId, getCompanyName]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -96,13 +91,10 @@ export default function Dashboard() {
         setIsInitialLoading(true)
         setError(null)
         
-        // 회사 데이터를 모두 가져오기
-        const companiesData = await fetchAllCompanies();
-        
-        console.log('Companies API Response:', companiesData)
-        
-        // 회사 데이터 저장
-        setCompanies(companiesData)
+        // 회사 데이터가 없으면 새로 로드
+        if (companies.length === 0) {
+          await loadCompanies();
+        }
         
         // 첫 번째 질문 데이터 로드
         await loadQuestions(true)
@@ -123,7 +115,7 @@ export default function Dashboard() {
       setQuestions(SAMPLE_QUESTIONS)
       setIsInitialLoading(false)
     }
-  }, [])
+  }, [companies.length, loadCompanies])
 
   const handleScroll = useCallback(() => {
     const scrollTop = document.documentElement.scrollTop;

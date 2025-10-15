@@ -13,10 +13,12 @@ import JobPostingsPage from './pages/jobPostings/page'
 import JobPostingDetailPage from './pages/jobPostingDetail/page'
 import ProtectedRoute from './components/ProtectedRoute'
 import { OnboardingProvider } from './contexts/OnboardingContext'
+import { CompaniesProvider } from './contexts/CompaniesContext'
 
 function App() {
   return (
     <OnboardingProvider>
+      <CompaniesProvider>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
@@ -24,7 +26,7 @@ function App() {
           path="/onboarding/position" 
           element={
             <ProtectedRoute>
-              <Position />
+              <Position />  
             </ProtectedRoute>
           } 
         />
@@ -93,6 +95,7 @@ function App() {
           } 
         />
       </Routes>
+      </CompaniesProvider>
     </OnboardingProvider>
   )
 }
