@@ -150,7 +150,7 @@ const CompaniesPage: React.FC = () => {
                                 placeholder="회사 검색"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full px-4 py-2.5 bg-[#1F2937] border border-[#374151] rounded-md text-[#F9FAFB] placeholder-[#6B7280] focus:outline-none focus:ring-1 focus:ring-[#60A5FA] focus:border-[#60A5FA] text-sm"
+                                className="w-full px-4 py-2.5 bg-[#0F1115] border border-[#374151] rounded-md text-[#F9FAFB] placeholder-[#6B7280] focus:outline-none focus:ring-1 focus:ring-[#60A5FA] focus:border-[#60A5FA] text-sm"
                             />
                         </div>
                         <div className="text-xs text-[#6B7280]">
@@ -162,7 +162,7 @@ const CompaniesPage: React.FC = () => {
                 {/* 회사 목록 */}
                 <div className="bg-[#1F2937] border border-[#374151] rounded-lg overflow-hidden">
                     {/* 테이블 헤더 */}
-                    <div className="bg-[#111827] border-b border-[#374151] px-6 py-3">
+                    <div className="bg-[#0F1115] border-b border-[#374151] px-6 py-3">
                         <div className="grid grid-cols-12 gap-4 text-xs font-medium text-[#9CA3AF] uppercase tracking-wide">
                             <div className="col-span-1">ID</div>
                             <div className="col-span-8">회사이름</div>
@@ -171,11 +171,11 @@ const CompaniesPage: React.FC = () => {
                     </div>
 
                     {/* 테이블 바디 */}
-                    <div className="divide-y divide-[#374151]">
+                    <div className="divide-y divide-[#0F1115]">
                         {filteredCompanies.map((company, _index) => (
                             <div
                                 key={company.company_id}
-                                className="px-6 py-4 hover:bg-[#111827] transition-colors duration-150 group"
+                                className="px-6 py-4 bg-[#0F1115] hover:bg-[#111827] transition-colors duration-150 group border-b border-[#374151]"
                             >
                                 <div className="grid grid-cols-12 gap-4 items-center">
                                     {/* ID */}
@@ -204,7 +204,7 @@ const CompaniesPage: React.FC = () => {
 
                     {/* 로딩 인디케이터 */}
                     {loadingMore && !searchTerm.trim() && (
-                        <div className="px-6 py-8 text-center">
+                        <div className="px-6 py-8 text-center bg-[#0F1115]">
                             <div className="flex items-center justify-center gap-3">
                                 <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                                 <span className="text-[#D1D5DB] text-sm">더 많은 회사를 불러오는 중...</span>
@@ -222,7 +222,7 @@ const CompaniesPage: React.FC = () => {
 
                 {/* 검색 결과가 없을 때 */}
                 {filteredCompanies.length === 0 && searchTerm && (
-                    <div className="bg-[#1F2937] border border-[#374151] rounded-lg p-12 text-center">
+                    <div className="bg-[#0F1115] border border-[#374151] rounded-lg p-12 text-center">
                         <div className="text-[#6B7280] text-sm font-medium mb-2">
                             검색 결과 없음
                         </div>
@@ -240,7 +240,7 @@ const CompaniesPage: React.FC = () => {
 
                 {/* 회사가 없을 때 */}
                 {companies.length === 0 && !loading && (
-                    <div className="bg-[#1F2937] border border-[#374151] rounded-lg p-12 text-center">
+                    <div className="bg-[#0F1115] border border-[#374151] rounded-lg p-12 text-center">
                         <div className="text-[#6B7280] text-sm font-medium mb-2">
                             회사 없음
                         </div>
