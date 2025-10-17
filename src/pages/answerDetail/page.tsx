@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@clerk/clerk-react';
-import { ArrowLeft, Heart, MessageCircle, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Heart, MessageCircle } from 'lucide-react';
 import Header from '../../components/Header';
 import RepliesList from '../../components/RepliesList';
 import axios from 'axios';
@@ -244,13 +244,6 @@ const AnswerDetailPage: React.FC = () => {
             refreshTrigger={refreshTrigger}
           />
 
-          {/* Load More Replies */}
-          <div className="flex justify-center mt-12">
-            <button className="bg-[#171a1f] border border-blue-500 rounded-xl px-8 py-3 flex items-center gap-2 hover:bg-blue-500/10 transition-colors">
-              <span className="text-blue-500 text-sm font-medium">더 많은 답글 보기</span>
-              <ChevronDown className="w-4 h-4 text-blue-500" />
-            </button>
-          </div>
         </section>
       </main>
     </div>

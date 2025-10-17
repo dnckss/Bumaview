@@ -245,17 +245,6 @@ const JobPostingsPage: React.FC = () => {
               <ChevronDown className={`w-4 h-4 transition-transform ${activeFilterTab === 'location' ? 'rotate-180' : ''}`} />
             </button>
             <button
-              onClick={() => setActiveFilterTab(activeFilterTab === 'employment' ? null : 'employment')}
-              className={`flex-1 px-6 py-4 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
-                activeFilterTab === 'employment' 
-                  ? 'bg-[#2a2f36] text-white border-b-2 border-blue-500' 
-                  : 'text-gray-400 hover:text-white hover:bg-[#1a1d23]'
-              }`}
-            >
-              고용형태
-              <ChevronDown className={`w-4 h-4 transition-transform ${activeFilterTab === 'employment' ? 'rotate-180' : ''}`} />
-            </button>
-            <button
               onClick={() => setActiveFilterTab(activeFilterTab === 'experience' ? null : 'experience')}
               className={`flex-1 px-6 py-4 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
                 activeFilterTab === 'experience' 

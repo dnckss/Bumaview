@@ -18,6 +18,7 @@ export interface QuestionsResponse {
 export interface QuestionsParams {
   cursor_id?: number;
   size?: number;
+  token?: string;
 }
 
 export const fetchQuestions = async (params: QuestionsParams = {}): Promise<QuestionsResponse> => {
@@ -35,7 +36,20 @@ export const fetchQuestions = async (params: QuestionsParams = {}): Promise<Ques
     const fullUrl = `${URL}/questions?${searchParams.toString()}`;
     console.log('Full URL:', fullUrl);
     
-    const response = await fetch(fullUrl);
+    // 헤더 구성
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+    };
+    
+    // 토큰이 있으면 Authorization 헤더 추가
+    if (params.token) {
+      headers['Authorization'] = `Bearer ${params.token}`;
+    }
+    
+    const response = await fetch(fullUrl, {
+      method: 'GET',
+      headers,
+    });
     console.log('Response status:', response.status);
     
     if (!response.ok) {

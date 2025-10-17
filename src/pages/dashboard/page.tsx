@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { useUser } from '@clerk/clerk-react'
+import { useUser, useAuth } from '@clerk/clerk-react'
 import QuestionCard from '../../components/QuestionCard'
 import Header from '../../components/Header'
 import { SAMPLE_QUESTIONS, type Question } from '../../constants/questions'
@@ -10,6 +10,7 @@ import { useCompanies } from '../../contexts/CompaniesContext'
 export default function Dashboard() {
   const URL = import.meta.env.VITE_API_URL
   const { user } = useUser()
+  const { getToken } = useAuth()
   const { companies, getCompanyName, loadCompanies } = useCompanies()
   const [questions, setQuestions] = useState<Question[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -28,10 +29,14 @@ export default function Dashboard() {
         setLoadingMore(true);
       }
       
+      // 토큰 가져오기
+      const token = await getToken();
+      
       console.log('Loading questions...', { cursorId, isInitial });
       const response = await fetchQuestions({ 
         cursor_id: cursorId, 
-        size: 20 
+        size: 20,
+        token: token || undefined
       });
       
       console.log('Loaded questions:', response);
@@ -83,7 +88,7 @@ export default function Dashboard() {
       setIsLoading(false);
       setLoadingMore(false);
     }
-  }, [cursorId, getCompanyName]);
+  }, [cursorId, getCompanyName, getToken]);
 
   useEffect(() => {
     const fetchData = async () => {

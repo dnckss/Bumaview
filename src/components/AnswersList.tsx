@@ -170,12 +170,8 @@ const AnswersList: React.FC<AnswersListProps> = ({ questionId, onAnswerClick, re
         ))}
       </div>
 
-      {/* Load More Button */}
-      <div className="flex justify-center mt-12">
-        <button className="bg-[#171a1f] border border-blue-500 rounded-xl px-8 py-3 flex items-center gap-2 hover:bg-blue-500/10 transition-colors">
-          <span className="text-blue-500 text-sm font-medium">더 많은 답변 보기</span>
-        </button>
-      </div>
+      
+    
     </section>
   );
 };
